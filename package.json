@@ -4,8 +4,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"bunx @tailwindcss/cli -i src/index.css -o src/output.css --watch\" \"bun --hot index.ts\"",
-    "build:css": "bunx @tailwindcss/cli -i src/index.css -o src/output.css --minify",
+    "dev": "concurrently \"tailwindcss -i src/index.css -o src/output.css --watch\" \"bun --hot index.ts\"",
+    "build:css": "tailwindcss -i src/index.css -o src/output.css --minify",
     "debug": "bun --inspect --hot index.ts",
     "start": "bun index.ts",
     "typecheck": "bun x tsc --noEmit"
