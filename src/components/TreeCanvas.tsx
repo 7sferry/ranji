@@ -62,8 +62,7 @@ export function TreeCanvas({ tree, searchQuery, onSelectPerson }: TreeCanvasProp
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
-      person.firstName.toLowerCase().includes(q) ||
-      person.lastName.toLowerCase().includes(q) ||
+      person.name.toLowerCase().includes(q) ||
       (person.nickname?.toLowerCase().includes(q) ?? false)
     );
   }
@@ -164,12 +163,12 @@ export function TreeCanvas({ tree, searchQuery, onSelectPerson }: TreeCanvasProp
                     {person.photo ? (
                       <img src={person.photo} alt="" className="h-full w-full rounded-full object-cover" />
                     ) : (
-                      `${person.firstName[0]}${person.lastName[0]}`
+                      person.name.split(" ").map((w) => w[0] ?? "").join("").slice(0, 2)
                     )}
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-xs font-semibold text-neutral-900 dark:text-neutral-100">
-                      {person.firstName} {person.lastName}
+                      {person.name}
                     </p>
                     <p className="text-[10px] text-neutral-500 dark:text-neutral-400">
                       {person.birthDate?.slice(0, 4) ?? "?"} {person.deathDate ? `- ${person.deathDate.slice(0, 4)}` : ""}

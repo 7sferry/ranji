@@ -12,8 +12,7 @@ export function PersonForm({ treeId, person, onClose }: PersonFormProps) {
   const { state, dispatch } = useApp();
   const tree = state.trees.find((t) => t.id === treeId)!;
 
-  const [firstName, setFirstName] = useState(person?.firstName ?? "");
-  const [lastName, setLastName] = useState(person?.lastName ?? "");
+  const [name, setName] = useState(person?.name ?? "");
   const [nickname, setNickname] = useState(person?.nickname ?? "");
   const [gender, setGender] = useState<Person["gender"]>(person?.gender ?? "other");
   const [birthDate, setBirthDate] = useState(person?.birthDate ?? "");
@@ -54,11 +53,10 @@ export function PersonForm({ treeId, person, onClose }: PersonFormProps) {
   }
 
   function handleSave() {
-    if (!firstName.trim() || !lastName.trim()) return;
+    if (!name.trim()) return;
     const personData: Person = {
       id: person?.id ?? crypto.randomUUID(),
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
+      name: name.trim(),
       nickname: nickname.trim() || undefined,
       gender,
       birthDate: birthDate || undefined,
@@ -80,6 +78,56 @@ export function PersonForm({ treeId, person, onClose }: PersonFormProps) {
       dispatch({ type: "DELETE_PERSON", treeId, personId: person.id });
       onClose();
     }
+  }
+
+  function wouldCreateCycle(parentId: string, childId: string): boolean {
+    // Check if childId is an ancestor of parentId (which would create a cycle)
+    const visited = new Set<string>();
+    const queue = [parentId];
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      if (current === childId) return true;
+      if (visited.has(current)) continue;
+      visited.add(current);
+      // Walk up: find parents of current
+      for (const rel of tree.relationships) {
+        if (rel.type === "parent-child" && rel.toPersonId === current) {
+          queue.push(rel.fromPersonId);
+        }
+      }
+    }
+    return false;
+  }
+
+  function getAvailableForRelType(relType: "parent" | "spouse" | "child"): Person[] {
+    if (!person) return [];
+    return tree.persons.filter((p) => {
+      if (p.id === person.id) return false;
+      if (relType === "parent") {
+        // Exclude existing parents and anyone that would create a cycle
+        const alreadyParent = tree.relationships.some(
+          (r) => r.type === "parent-child" && r.fromPersonId === p.id && r.toPersonId === person.id
+        );
+        if (alreadyParent) return false;
+        if (wouldCreateCycle(p.id, person.id)) return false;
+      } else if (relType === "child") {
+        // Exclude existing children and anyone that would create a cycle
+        const alreadyChild = tree.relationships.some(
+          (r) => r.type === "parent-child" && r.fromPersonId === person.id && r.toPersonId === p.id
+        );
+        if (alreadyChild) return false;
+        if (wouldCreateCycle(person.id, p.id)) return false;
+      } else if (relType === "spouse") {
+        // Exclude existing spouses
+        const alreadySpouse = tree.relationships.some(
+          (r) => r.type === "spouse" &&
+            ((r.fromPersonId === person.id && r.toPersonId === p.id) ||
+             (r.fromPersonId === p.id && r.toPersonId === person.id))
+        );
+        if (alreadySpouse) return false;
+      }
+      return true;
+    });
   }
 
   function handleAddRelationship() {
@@ -123,7 +171,6 @@ export function PersonForm({ treeId, person, onClose }: PersonFormProps) {
   }
 
   const related = person ? getRelatedPersons() : { parents: [] as Person[], spouses: [] as Person[], children: [] as Person[] };
-  const availableForRel = tree.persons.filter((p) => p.id !== person?.id);
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-end bg-black/50" onClick={onClose}>
@@ -149,7 +196,7 @@ export function PersonForm({ treeId, person, onClose }: PersonFormProps) {
               <img src={photo} alt="Photo" className="h-full w-full object-cover" />
             ) : (
               <span className="text-lg font-bold text-neutral-500 dark:text-neutral-400">
-                {firstName?.[0] ?? ""}{lastName?.[0] ?? ""}
+                {name.split(" ").map((w) => w[0] ?? "").join("").slice(0, 2)}
               </span>
             )}
           </div>
@@ -164,15 +211,9 @@ export function PersonForm({ treeId, person, onClose }: PersonFormProps) {
 
         {/* Form fields */}
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">First Name *</label>
-              <input value={firstName} onChange={(e) => setFirstName(e.target.value)} className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-600" />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">Last Name *</label>
-              <input value={lastName} onChange={(e) => setLastName(e.target.value)} className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-600" />
-            </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">Name *</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-600" />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-neutral-600 dark:text-neutral-400">Nickname</label>
@@ -214,7 +255,7 @@ export function PersonForm({ treeId, person, onClose }: PersonFormProps) {
                   const rel = existingRels.find((r) => r.type === "parent-child" && r.fromPersonId === p.id && r.toPersonId === person.id);
                   return (
                     <div key={p.id} className="flex items-center justify-between rounded px-2 py-1 text-sm text-neutral-700 dark:text-neutral-300">
-                      <span>{p.firstName} {p.lastName}</span>
+                      <span>{p.name}</span>
                       {rel && <button onClick={() => handleRemoveRelationship(rel.id)} className="text-xs text-red-500">Remove</button>}
                     </div>
                   );
@@ -229,7 +270,7 @@ export function PersonForm({ treeId, person, onClose }: PersonFormProps) {
                   const rel = existingRels.find((r) => r.type === "spouse" && (r.fromPersonId === p.id || r.toPersonId === p.id));
                   return (
                     <div key={p.id} className="flex items-center justify-between rounded px-2 py-1 text-sm text-neutral-700 dark:text-neutral-300">
-                      <span>{p.firstName} {p.lastName}</span>
+                      <span>{p.name}</span>
                       {rel && <button onClick={() => handleRemoveRelationship(rel.id)} className="text-xs text-red-500">Remove</button>}
                     </div>
                   );
@@ -244,7 +285,7 @@ export function PersonForm({ treeId, person, onClose }: PersonFormProps) {
                   const rel = existingRels.find((r) => r.type === "parent-child" && r.fromPersonId === person.id && r.toPersonId === p.id);
                   return (
                     <div key={p.id} className="flex items-center justify-between rounded px-2 py-1 text-sm text-neutral-700 dark:text-neutral-300">
-                      <span>{p.firstName} {p.lastName}</span>
+                      <span>{p.name}</span>
                       {rel && <button onClick={() => handleRemoveRelationship(rel.id)} className="text-xs text-red-500">Remove</button>}
                     </div>
                   );
@@ -264,8 +305,8 @@ export function PersonForm({ treeId, person, onClose }: PersonFormProps) {
                   className="mb-2 w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm dark:border-neutral-600"
                 >
                   <option value="">Select person...</option>
-                  {availableForRel.map((p) => (
-                    <option key={p.id} value={p.id}>{p.firstName} {p.lastName}</option>
+                  {(addRelType ? getAvailableForRelType(addRelType) : []).map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
                 <div className="flex gap-2">

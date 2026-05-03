@@ -12,8 +12,7 @@ export function ListView({ tree, searchQuery, onSelectPerson }: ListViewProps) {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
-      p.firstName.toLowerCase().includes(q) ||
-      p.lastName.toLowerCase().includes(q) ||
+      p.name.toLowerCase().includes(q) ||
       (p.nickname?.toLowerCase().includes(q) ?? false)
     );
   });
@@ -73,20 +72,20 @@ export function ListView({ tree, searchQuery, onSelectPerson }: ListViewProps) {
                 className="cursor-pointer border-b border-neutral-100 transition hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-800/50"
               >
                 <td className="px-3 py-2 font-medium text-neutral-900 dark:text-neutral-100">
-                  {person.firstName} {person.lastName}
+                  {person.name}
                   {person.nickname && <span className="ml-1 text-xs text-neutral-500">({person.nickname})</span>}
                 </td>
                 <td className="px-3 py-2 capitalize text-neutral-700 dark:text-neutral-300">{person.gender}</td>
                 <td className="px-3 py-2 text-neutral-700 dark:text-neutral-300">{person.birthDate ?? "-"}</td>
                 <td className="px-3 py-2 text-neutral-700 dark:text-neutral-300">{person.deathDate ?? "-"}</td>
                 <td className="px-3 py-2 text-neutral-600 dark:text-neutral-400">
-                  {getParents(person).map((p) => `${p.firstName} ${p.lastName}`).join(", ") || "-"}
+                  {getParents(person).map((p) => p.name).join(", ") || "-"}
                 </td>
                 <td className="px-3 py-2 text-neutral-600 dark:text-neutral-400">
-                  {getSpouses(person).map((p) => `${p.firstName} ${p.lastName}`).join(", ") || "-"}
+                  {getSpouses(person).map((p) => p.name).join(", ") || "-"}
                 </td>
                 <td className="px-3 py-2 text-neutral-600 dark:text-neutral-400">
-                  {getChildren(person).map((p) => `${p.firstName} ${p.lastName}`).join(", ") || "-"}
+                  {getChildren(person).map((p) => p.name).join(", ") || "-"}
                 </td>
               </tr>
             ))}

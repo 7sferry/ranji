@@ -1,7 +1,6 @@
 export interface Person {
   id: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   nickname?: string;
   gender: "male" | "female" | "other";
   birthDate?: string;
