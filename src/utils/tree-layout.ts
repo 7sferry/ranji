@@ -18,7 +18,6 @@ export function computeLayout(persons: Person[], relationships: Relationship[]):
   const parentChildRels = relationships.filter((r) => r.type === "parent-child");
   const spouseRels = relationships.filter((r) => r.type === "spouse");
 
-  // Build adjacency
   const childrenOf = new Map<string, string[]>();
   const parentsOf = new Map<string, string[]>();
 
@@ -29,7 +28,6 @@ export function computeLayout(persons: Person[], relationships: Relationship[]):
     parentsOf.get(rel.toPersonId)!.push(rel.fromPersonId);
   }
 
-  // Build spouse map
   const spouseOf = new Map<string, string[]>();
   for (const rel of spouseRels) {
     if (!spouseOf.has(rel.fromPersonId)) spouseOf.set(rel.fromPersonId, []);
@@ -38,172 +36,174 @@ export function computeLayout(persons: Person[], relationships: Relationship[]):
     spouseOf.get(rel.toPersonId)!.push(rel.fromPersonId);
   }
 
-  // Find roots (no parents) and assign generations via BFS
+  // --- Step 1: Assign generations via BFS ---
   const generation = new Map<string, number>();
   const visited = new Set<string>();
   const queue: { id: string; gen: number }[] = [];
 
-  const roots = persons.filter((p) => !parentsOf.has(p.id) || parentsOf.get(p.id)!.length === 0);
-  for (const root of roots) {
-    if (!visited.has(root.id)) {
-      queue.push({ id: root.id, gen: 0 });
-      visited.add(root.id);
+  // Roots = persons with no parents
+  for (const p of persons) {
+    if (!parentsOf.has(p.id) || parentsOf.get(p.id)!.length === 0) {
+      // Skip if this person is a spouse of someone who has parents (they'll be placed alongside their partner)
+      const isSpouseOfChild = (spouseOf.get(p.id) ?? []).some(
+        (sid) => (parentsOf.get(sid)?.length ?? 0) > 0
+      );
+      if (!isSpouseOfChild) {
+        queue.push({ id: p.id, gen: 0 });
+        visited.add(p.id);
+      }
     }
   }
-  // Enqueue unreachable persons
-  for (const p of persons) {
-    if (!visited.has(p.id)) {
-      queue.push({ id: p.id, gen: 0 });
-      visited.add(p.id);
-    }
+
+  // If no roots found (circular), just pick the first person
+  if (queue.length === 0 && persons.length > 0) {
+    queue.push({ id: persons[0]!.id, gen: 0 });
+    visited.add(persons[0]!.id);
   }
 
   while (queue.length > 0) {
     const { id, gen } = queue.shift()!;
     generation.set(id, Math.max(generation.get(id) ?? 0, gen));
 
-    // Place spouses at same generation
+    // Spouse gets same generation
     for (const sid of spouseOf.get(id) ?? []) {
-      if (!generation.has(sid)) {
+      if (!visited.has(sid)) {
+        visited.add(sid);
         generation.set(sid, gen);
+        queue.push({ id: sid, gen });
       }
     }
 
+    // Children get next generation
     for (const childId of childrenOf.get(id) ?? []) {
-      const childGen = gen + 1;
       if (!visited.has(childId)) {
         visited.add(childId);
-        queue.push({ id: childId, gen: childGen });
+        queue.push({ id: childId, gen: gen + 1 });
       } else if ((generation.get(childId) ?? 0) <= gen) {
-        generation.set(childId, childGen);
+        generation.set(childId, gen + 1);
+        queue.push({ id: childId, gen: gen + 1 });
       }
     }
   }
 
-  // Build family units: a primary person + their spouses grouped together
-  // A "family unit" is placed as one block, with children hanging below the primary person
-  const placed = new Set<string>();
-  const positions = new Map<string, { x: number; y: number }>();
+  // Catch any disconnected persons
+  for (const p of persons) {
+    if (!generation.has(p.id)) {
+      generation.set(p.id, 0);
+    }
+  }
 
-  // For each person, compute the width of their subtree (including spouse)
+  // --- Step 2: Compute subtree widths bottom-up ---
   const subtreeWidth = new Map<string, number>();
+  const computing = new Set<string>();
 
-  function getUnitWidth(id: string): number {
+  function getWidth(id: string): number {
     if (subtreeWidth.has(id)) return subtreeWidth.get(id)!;
+    if (computing.has(id)) return NODE_WIDTH;
+    computing.add(id);
 
-    // Unit = person + spouses side by side
+    // This node's own width (including spouse if any)
     const spouses = (spouseOf.get(id) ?? []).filter(
       (sid) => generation.get(sid) === generation.get(id)
     );
-    const unitNodeWidth = (1 + spouses.length) * NODE_WIDTH + spouses.length * SPOUSE_GAP;
+    const selfWidth = (1 + spouses.length) * NODE_WIDTH + spouses.length * SPOUSE_GAP;
 
-    // Children of this person (and their subtrees)
-    const children = childrenOf.get(id) ?? [];
+    // Collect ALL children (from this person and their spouses)
+    const allChildren = new Set<string>();
+    for (const cid of childrenOf.get(id) ?? []) allChildren.add(cid);
+    for (const sid of spouses) {
+      for (const cid of childrenOf.get(sid) ?? []) allChildren.add(cid);
+    }
+
+    const children = [...allChildren];
     if (children.length === 0) {
-      subtreeWidth.set(id, unitNodeWidth);
-      return unitNodeWidth;
+      subtreeWidth.set(id, selfWidth);
+      return selfWidth;
     }
 
-    let childrenTotalWidth = 0;
-    for (const childId of children) {
-      childrenTotalWidth += getUnitWidth(childId);
+    let childrenTotal = 0;
+    for (const cid of children) {
+      childrenTotal += getWidth(cid);
     }
-    childrenTotalWidth += (children.length - 1) * H_GAP;
+    childrenTotal += (children.length - 1) * H_GAP;
 
-    const width = Math.max(unitNodeWidth, childrenTotalWidth);
+    const width = Math.max(selfWidth, childrenTotal);
     subtreeWidth.set(id, width);
     return width;
   }
 
-  // Compute widths for all roots first
-  const allIds = persons.map((p) => p.id);
-  for (const id of allIds) {
-    getUnitWidth(id);
-  }
+  for (const p of persons) getWidth(p.id);
 
-  // Place nodes top-down, starting from roots
-  function placeSubtree(id: string, x: number, y: number) {
+  // --- Step 3: Place nodes top-down ---
+  const positions = new Map<string, { x: number; y: number }>();
+  const placed = new Set<string>();
+
+  function place(id: string, left: number) {
     if (placed.has(id)) return;
     placed.add(id);
 
     const gen = generation.get(id) ?? 0;
-    const nodeY = gen * (NODE_HEIGHT + V_GAP);
+    const y = gen * (NODE_HEIGHT + V_GAP);
+    const myWidth = subtreeWidth.get(id) ?? NODE_WIDTH;
 
-    // Place spouses
+    // Spouses at same gen
     const spouses = (spouseOf.get(id) ?? []).filter(
       (sid) => generation.get(sid) === generation.get(id) && !placed.has(sid)
     );
+    const selfWidth = (1 + spouses.length) * NODE_WIDTH + spouses.length * SPOUSE_GAP;
 
-    const totalUnitWidth = (1 + spouses.length) * NODE_WIDTH + spouses.length * SPOUSE_GAP;
-    const treeWidth = subtreeWidth.get(id) ?? NODE_WIDTH;
+    // Center the person+spouse block within allocated width
+    const blockStart = left + (myWidth - selfWidth) / 2;
+    positions.set(id, { x: blockStart, y });
 
-    // Center the unit within the allocated width
-    const unitStartX = x + (treeWidth - totalUnitWidth) / 2;
-
-    positions.set(id, { x: unitStartX, y: nodeY });
-
-    let sx = unitStartX + NODE_WIDTH + SPOUSE_GAP;
+    let sx = blockStart + NODE_WIDTH + SPOUSE_GAP;
     for (const sid of spouses) {
       placed.add(sid);
-      positions.set(sid, { x: sx, y: nodeY });
+      positions.set(sid, { x: sx, y });
       sx += NODE_WIDTH + SPOUSE_GAP;
     }
 
-    // Place children
-    const children = childrenOf.get(id) ?? [];
-    if (children.length === 0) return;
+    // Collect children from self and spouses
+    const allChildren = new Set<string>();
+    for (const cid of childrenOf.get(id) ?? []) allChildren.add(cid);
+    for (const sid of spouses) {
+      for (const cid of childrenOf.get(sid) ?? []) allChildren.add(cid);
+    }
 
-    let childX = x;
-    for (const childId of children) {
-      if (placed.has(childId)) continue;
-      const childWidth = subtreeWidth.get(childId) ?? NODE_WIDTH;
-      placeSubtree(childId, childX, 0);
-      childX += childWidth + H_GAP;
+    // Place children left to right within our allocated width
+    let childLeft = left;
+    for (const cid of allChildren) {
+      if (placed.has(cid)) continue;
+      const cw = subtreeWidth.get(cid) ?? NODE_WIDTH;
+      place(cid, childLeft);
+      childLeft += cw + H_GAP;
     }
   }
 
-  // Find top-level roots (persons with no parents who aren't spouses of someone with parents)
-  const topRoots: string[] = [];
-  const handledAsSpouse = new Set<string>();
-
-  for (const p of persons) {
-    const parents = parentsOf.get(p.id);
-    if (!parents || parents.length === 0) {
-      // Check if this person is a spouse of someone who HAS parents
-      const isSpouseOfNonRoot = (spouseOf.get(p.id) ?? []).some(
-        (sid) => parentsOf.has(sid) && (parentsOf.get(sid)?.length ?? 0) > 0
-      );
-      if (!isSpouseOfNonRoot && !handledAsSpouse.has(p.id)) {
-        topRoots.push(p.id);
-        // Mark their spouses so they don't become separate roots
-        for (const sid of spouseOf.get(p.id) ?? []) {
-          handledAsSpouse.add(sid);
-        }
-      }
-    }
-  }
-
-  // Place each top-level root side by side
+  // Place each root tree
   let currentX = 0;
-  for (const rootId of topRoots) {
-    if (placed.has(rootId)) continue;
-    placeSubtree(rootId, currentX, 0);
-    currentX += (subtreeWidth.get(rootId) ?? NODE_WIDTH) + H_GAP * 3;
+  const rootIds = persons
+    .filter((p) => !parentsOf.has(p.id) || parentsOf.get(p.id)!.length === 0)
+    .filter((p) => !(spouseOf.get(p.id) ?? []).some((sid) => (parentsOf.get(sid)?.length ?? 0) > 0))
+    .map((p) => p.id);
+
+  for (const rid of rootIds) {
+    if (placed.has(rid)) continue;
+    place(rid, currentX);
+    currentX += (subtreeWidth.get(rid) ?? NODE_WIDTH) + H_GAP * 3;
   }
 
-  // Place any remaining unplaced persons
+  // Place any remaining
   for (const p of persons) {
     if (!placed.has(p.id)) {
-      placeSubtree(p.id, currentX, 0);
+      place(p.id, currentX);
       currentX += (subtreeWidth.get(p.id) ?? NODE_WIDTH) + H_GAP * 3;
     }
   }
 
-  // Convert to array
-  const result: NodePosition[] = [];
-  for (const [personId, pos] of positions) {
-    result.push({ personId, x: pos.x, y: pos.y });
-  }
-
-  return result;
+  return [...positions.entries()].map(([personId, pos]) => ({
+    personId,
+    x: pos.x,
+    y: pos.y,
+  }));
 }

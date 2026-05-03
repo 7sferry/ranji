@@ -5,6 +5,7 @@ import { Navbar } from "./components/Navbar";
 import { HomePage } from "./components/HomePage";
 import { TreePage } from "./components/TreePage";
 import { exportTree, exportAll, validateImport } from "./utils/import-export";
+import { generateId } from "./utils/id";
 
 export default function App() {
   const { state, dispatch, toggleTheme } = useAppState();
@@ -39,7 +40,7 @@ export default function App() {
           setTimeout(() => setImportError(null), 4000);
         } else if (result.type === "tree") {
           // Assign new ID to avoid conflicts
-          const tree = { ...result.tree, id: crypto.randomUUID(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+          const tree = { ...result.tree, id: generateId(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
           dispatch({ type: "IMPORT_TREE", tree });
           handleOpenTree(tree.id);
         } else {

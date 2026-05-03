@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useApp } from "../context";
 import type { FamilyTree } from "../types";
+import { generateId } from "../utils/id";
 
 interface HomePageProps {
   onOpenTree: (id: string) => void;
@@ -18,7 +19,7 @@ export function HomePage({ onOpenTree }: HomePageProps) {
   function handleCreate() {
     if (!newName.trim()) return;
     const tree: FamilyTree = {
-      id: crypto.randomUUID(),
+      id: generateId(),
       name: newName.trim(),
       description: newDesc.trim() || undefined,
       createdAt: new Date().toISOString(),

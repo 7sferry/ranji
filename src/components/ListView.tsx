@@ -50,7 +50,7 @@ export function ListView({ tree, searchQuery, onSelectPerson }: ListViewProps) {
   }
 
   return (
-    <div className="h-full overflow-auto p-4">
+    <div className="h-full overflow-auto bg-white p-4 dark:bg-neutral-950">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[700px] text-sm">
           <thead>
