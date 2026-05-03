@@ -18,7 +18,7 @@ export function TreeCanvas({ tree, searchQuery, onSelectPerson }: TreeCanvasProp
 
   const positions = computeLayout(tree.persons, tree.relationships);
 
-  // Center view on mount or when tree changes
+  // Center view and fit on mount or when tree changes
   useEffect(() => {
     if (positions.length === 0) return;
     const container = containerRef.current;
@@ -27,9 +27,17 @@ export function TreeCanvas({ tree, searchQuery, onSelectPerson }: TreeCanvasProp
     const maxX = Math.max(...positions.map((p) => p.x + 160));
     const minY = Math.min(...positions.map((p) => p.y));
     const maxY = Math.max(...positions.map((p) => p.y + 80));
+    const treeW = maxX - minX;
+    const treeH = maxY - minY;
+    const cw = container.clientWidth;
+    const ch = container.clientHeight;
+    // Auto-fit zoom with some padding
+    const fitZoom = Math.min(1, (cw - 40) / treeW, (ch - 40) / treeH);
+    const z = Math.max(0.1, fitZoom);
+    setZoom(z);
     const cx = (minX + maxX) / 2;
     const cy = (minY + maxY) / 2;
-    setPan({ x: container.clientWidth / 2 - cx, y: container.clientHeight / 2 - cy + 50 });
+    setPan({ x: cw / 2 - cx * z, y: ch / 2 - cy * z });
   }, [tree.persons.length, tree.relationships.length]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -55,7 +63,7 @@ export function TreeCanvas({ tree, searchQuery, onSelectPerson }: TreeCanvasProp
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setZoom((z) => Math.min(2, Math.max(0.3, z * delta)));
+    setZoom((z) => Math.min(2, Math.max(0.05, z * delta)));
   }, []);
 
   function isMatch(person: Person) {
