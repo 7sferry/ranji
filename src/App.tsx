@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import { HelmetProvider, Helmet } from "react-helmet-async";
 import { AppContext } from "./context";
 import { useAppState } from "./hooks/useAppState";
 import { Navbar } from "./components/Navbar";
@@ -67,8 +68,16 @@ export default function App() {
     exportAll(state);
   }
 
+  const currentTree = currentTreeId ? state.trees.find((t) => t.id === currentTreeId) : undefined;
+  const pageTitle = currentTree ? `${currentTree.name} - Ranji` : "Ranji - Family Tree";
+
   return (
+    <HelmetProvider>
     <AppContext.Provider value={{ state, dispatch, toggleTheme }}>
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={currentTree ? `Family tree: ${currentTree.name}` : "Create and explore your family trees"} />
+      </Helmet>
       <div className="min-h-screen bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
         <Navbar
           currentTreeId={currentTreeId}
@@ -102,5 +111,6 @@ export default function App() {
         )}
       </div>
     </AppContext.Provider>
+    </HelmetProvider>
   );
 }
