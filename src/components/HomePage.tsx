@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { useApp } from "../context";
-import type { FamilyTree } from "../types";
-import { generateId } from "../utils/id";
+import React, {useState} from "react";
+import {useApp} from "../context";
+import type {FamilyTree} from "../types";
+import {generateId} from "../utils/id";
 
 interface HomePageProps {
   onOpenTree: (id: string) => void;
@@ -47,7 +47,7 @@ export function HomePage({ onOpenTree }: HomePageProps) {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
-      <div className="mb-8 flex items-center justify-between">
+	    <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">Your Family Trees</h1>
         <button
           onClick={() => setShowNewDialog(true)}
@@ -55,6 +55,56 @@ export function HomePage({ onOpenTree }: HomePageProps) {
         >
           + New Tree
         </button>
+	    </div>
+
+	    <div
+			    className="mb-8 rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/40 dark:bg-indigo-950/30">
+		    <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-indigo-900 dark:text-indigo-200">
+			    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+			         aria-hidden="true">
+				    <path strokeLinecap="round" strokeLinejoin="round"
+				          d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75M6.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/>
+			    </svg>
+			    Your data stays with you
+		    </div>
+		    <ul className="grid grid-cols-1 gap-2 text-xs text-indigo-900/80 sm:grid-cols-2 lg:grid-cols-4 dark:text-indigo-200/80">
+			    <li className="flex items-start gap-2">
+				    <svg className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24"
+				         fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+					    <path strokeLinecap="round" strokeLinejoin="round"
+					          d="M9 17.25v1.007a3 3 0 0 1-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0 1 15 18.257V17.25m6-12V15a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 15V5.25m18 0A2.25 2.25 0 0 0 18.75 3H5.25A2.25 2.25 0 0 0 3 5.25m18 0V12a2.25 2.25 0 0 1-2.25 2.25H5.25A2.25 2.25 0 0 1 3 12V5.25"/>
+				    </svg>
+				    <span>100% client-side — runs entirely in your browser.</span>
+			    </li>
+			    <li className="flex items-start gap-2">
+				    <svg className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24"
+				         fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+					    <path strokeLinecap="round" strokeLinejoin="round"
+					          d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"/>
+				    </svg>
+				    <span>No servers, no cloud — nothing is uploaded.</span>
+			    </li>
+			    <li className="flex items-start gap-2">
+				    <svg className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24"
+				         fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+					    <path strokeLinecap="round" strokeLinejoin="round"
+					          d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>
+				    </svg>
+				    <span>All trees are stored in your browser's local storage.</span>
+			    </li>
+			    <li className="flex items-start gap-2">
+				    <svg className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24"
+				         fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+					    <path strokeLinecap="round" strokeLinejoin="round"
+					          d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/>
+				    </svg>
+				    <span>No account, no sign-up — just open and start.</span>
+			    </li>
+		    </ul>
+		    <p className="mt-3 text-[11px] text-indigo-900/60 dark:text-indigo-200/60">
+			    Clearing your browser data will erase your trees. Use <span className="font-medium">Export</span> from the
+			    navbar to keep a backup.
+		    </p>
       </div>
 
       {state.trees.length === 0 ? (
