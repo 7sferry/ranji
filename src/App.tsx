@@ -1,4 +1,4 @@
-import React, {useRef, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {Helmet, HelmetProvider} from "react-helmet-async";
 import {AppContext} from "./context";
 import {useAppState} from "./hooks/useAppState";
@@ -8,21 +8,65 @@ import {TreePage} from "./components/TreePage";
 import {exportAll, exportTree, validateImport} from "./utils/import-export";
 import {generateId} from "./utils/id";
 
+const TREE_PATH = "/ranji";
+const HOME_PATH = "/";
+
+function isTreePath(pathname: string) {
+  return pathname === TREE_PATH || pathname.startsWith(TREE_PATH + "/");
+}
+
 export default function App() {
   const { state, dispatch, toggleTheme } = useAppState();
-  const [currentTreeId, setCurrentTreeId] = useState<string | undefined>(state.settings.lastOpenedTreeId);
+  const [currentTreeId, setCurrentTreeId] = useState<string | undefined>(() => {
+    // On first paint, honor the URL: /ranji shows the last opened tree (if any), / shows home.
+    if (typeof window === "undefined") return state.settings.lastOpenedTreeId;
+    return isTreePath(window.location.pathname) ? state.settings.lastOpenedTreeId : undefined;
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importError, setImportError] = useState<string | null>(null);
+
+  function navigate(path: string) {
+    if (window.location.pathname !== path) {
+      window.history.pushState({}, "", path);
+    }
+  }
 
   function handleOpenTree(id: string) {
     setCurrentTreeId(id);
     dispatch({ type: "SET_LAST_OPENED_TREE", treeId: id });
+    navigate(TREE_PATH);
   }
 
   function handleGoHome() {
     setCurrentTreeId(undefined);
     dispatch({ type: "SET_LAST_OPENED_TREE", treeId: undefined });
+    navigate(HOME_PATH);
   }
+
+  // Sync URL → state on back/forward navigation.
+  useEffect(() => {
+    function onPopState() {
+      if (isTreePath(window.location.pathname)) {
+        setCurrentTreeId(state.settings.lastOpenedTreeId);
+      } else {
+        setCurrentTreeId(undefined);
+      }
+    }
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [state.settings.lastOpenedTreeId]);
+
+  // Keep URL in sync with state: if we ended up on /ranji without a tree (e.g. deleted last
+  // tree, or hard-loaded /ranji with empty storage), drop back to /.
+  useEffect(() => {
+    const onTreePath = isTreePath(window.location.pathname);
+    if (currentTreeId && !onTreePath) {
+      window.history.replaceState({}, "", TREE_PATH);
+    } else if (!currentTreeId && onTreePath) {
+      window.history.replaceState({}, "", HOME_PATH);
+    }
+  }, [currentTreeId]);
 
   function handleImport() {
     fileInputRef.current?.click();
@@ -75,7 +119,9 @@ export default function App() {
   const pageDescription = currentTree
       ? `Explore the “${currentTree.name}” family tree with ${currentTree.persons.length} member${currentTree.persons.length === 1 ? "" : "s"} — built with Ranji, the free browser-based genealogy tool.`
       : "Build, visualize, and share beautiful family trees online for free. Ranji is a private, browser-based genealogy tool — add relatives, map relationships, export your tree as JSON. No sign-up, no tracking.";
-  const canonicalUrl = "https://treefam.netlify.app/";
+  const canonicalUrl = currentTreeId
+      ? "https://treefam.netlify.app" + TREE_PATH
+      : "https://treefam.netlify.app/";
 
   return (
     <HelmetProvider>
