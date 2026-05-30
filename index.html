@@ -3,10 +3,105 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ranji - Family Tree</title>
+  <meta content="#4f46e5" media="(prefers-color-scheme: light)" name="theme-color"/>
+  <meta content="#0a0a0a" media="(prefers-color-scheme: dark)" name="theme-color"/>
+  <meta content="light dark" name="color-scheme"/>
+
+  <title>Ranji – Free Family Tree Builder | Visualize Your Genealogy Online</title>
+  <meta content="Build, visualize, and share beautiful family trees online for free. Ranji is a private, browser-based genealogy tool — add relatives, map relationships, export your tree as JSON. No sign-up, no tracking."
+        name="description"/>
+  <meta content="family tree, family tree maker, family tree builder, free family tree, genealogy, ancestry, family chart, family history, online family tree, genogram, pedigree chart, family tree app, family tree online, ranji, treefam"
+        name="keywords"/>
+  <meta content="Ranji" name="author"/>
+  <meta content="Ranji" name="application-name"/>
+  <meta content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" name="robots"/>
+  <meta content="index, follow" name="googlebot"/>
+  <meta content="strict-origin-when-cross-origin" name="referrer"/>
+  <meta content="telephone=no" name="format-detection"/>
+  <meta content="Vite + React" name="generator"/>
+
+  <link href="https://treefam.netlify.app/" rel="canonical"/>
+  <link href="/favicon.svg" rel="icon" type="image/svg+xml"/>
+  <link href="/favicon.ico" rel="alternate icon"/>
+  <link href="/apple-touch-icon.svg" rel="apple-touch-icon"/>
+  <link href="/site.webmanifest" rel="manifest"/>
+  <link href="/sitemap.xml" rel="sitemap" type="application/xml"/>
+
+  <!-- Open Graph / Facebook -->
+  <meta content="website" property="og:type"/>
+  <meta content="Ranji" property="og:site_name"/>
+  <meta content="https://treefam.netlify.app/" property="og:url"/>
+  <meta content="Ranji – Free Family Tree Builder" property="og:title"/>
+  <meta content="Build, visualize, and share beautiful family trees online for free. Private, browser-based genealogy — no sign-up required."
+        property="og:description"/>
+  <meta content="https://treefam.netlify.app/og-image.png" property="og:image"/>
+  <meta content="image/svg+xml" property="og:image:type"/>
+  <meta content="1200" property="og:image:width"/>
+  <meta content="630" property="og:image:height"/>
+  <meta content="Ranji – a clean, modern family tree builder running in your browser." property="og:image:alt"/>
+  <meta content="en_US" property="og:locale"/>
+
+  <!-- Twitter / X Card -->
+  <meta content="summary_large_image" name="twitter:card"/>
+  <meta content="Ranji – Free Family Tree Builder" name="twitter:title"/>
+  <meta content="Build, visualize, and share beautiful family trees online for free. Private, browser-based genealogy — no sign-up required."
+        name="twitter:description"/>
+  <meta content="https://treefam.netlify.app/og-image.png" name="twitter:image"/>
+  <meta content="Ranji – a clean, modern family tree builder running in your browser." name="twitter:image:alt"/>
+
+  <!-- Performance hints -->
+  <link href="https://treefam.netlify.app" rel="preconnect"/>
+  <link href="https://treefam.netlify.app" rel="dns-prefetch"/>
+
+  <!-- Structured Data: WebApplication -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Ranji",
+      "alternateName": "TreeFam",
+      "url": "https://treefam.netlify.app/",
+      "description": "Free, private, browser-based family tree builder. Create and visualize genealogy charts without an account.",
+      "applicationCategory": "LifestyleApplication",
+      "applicationSubCategory": "Genealogy",
+      "operatingSystem": "Any (Web)",
+      "browserRequirements": "Requires JavaScript and a modern browser",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Create unlimited family trees",
+        "Add people and map relationships",
+        "Interactive tree canvas and list view",
+        "Import and export trees as JSON",
+        "Dark mode",
+        "Local-first: all data stays in your browser"
+      ]
+    }
+  </script>
+
+  <!-- Structured Data: Organization -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Ranji",
+      "url": "https://treefam.netlify.app/",
+      "logo": "https://treefam.netlify.app/favicon.svg"
+    }
+  </script>
 </head>
 <body>
   <div id="root"></div>
+  <noscript>
+    <div style="padding:2rem;font-family:system-ui,sans-serif;text-align:center;">
+      <h1>Ranji – Family Tree Builder</h1>
+      <p>Ranji is a browser-based family tree app. Please enable JavaScript to build and explore your family tree.</p>
+    </div>
+  </noscript>
   <script type="module" src="/src/frontend.tsx"></script>
 </body>
 </html>
